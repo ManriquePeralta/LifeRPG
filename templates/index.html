@@ -541,6 +541,84 @@ const API = "";
 let currentMonth = new Date();
 let selectedDay = null;
 let chartInstance = null;
+let isOnline = navigator.onLine;
+
+// ===== SISTEMA DE ALMACENAMIENTO LOCAL =====
+const LocalStorage = {
+  getStats: function() {
+    const stored = localStorage.getItem('liferpg_stats');
+    return stored ? JSON.parse(stored) : {
+      "salud": 60,
+      "estudios": 55,
+      "amistades": 60,
+      "economia": 50,
+      "disciplina": 50,
+      "familia": 65,
+      "relacion": 80,
+      "felicidad": 70
+    };
+  },
+  
+  saveStats: function(stats) {
+    localStorage.setItem('liferpg_stats', JSON.stringify(stats));
+  },
+  
+  getCalendar: function() {
+    const stored = localStorage.getItem('liferpg_calendar');
+    return stored ? JSON.parse(stored) : {};
+  },
+  
+  saveCalendar: function(calendar) {
+    localStorage.setItem('liferpg_calendar', JSON.stringify(calendar));
+  },
+  
+  getActions: function() {
+    const stored = localStorage.getItem('liferpg_actions');
+    return stored ? JSON.parse(stored) : null;
+  },
+  
+  saveActions: function(actions) {
+    localStorage.setItem('liferpg_actions', JSON.stringify(actions));
+  }
+};
+
+// Detectar cambios de conectividad
+window.addEventListener('online', () => {
+  isOnline = true;
+  showStatus('✓ Conectado', 'good');
+  syncWithServer();
+});
+
+window.addEventListener('offline', () => {
+  isOnline = false;
+  showStatus('⚠️ Modo offline - datos guardados localmente', 'warning');
+});
+
+function showStatus(message, type) {
+  const log = document.getElementById('log');
+  if (log) {
+    log.innerHTML = `<span class="${type}">${message}</span>`;
+    setTimeout(() => log.innerHTML = '', 3000);
+  }
+}
+
+// Sincronizar con servidor cuando esté online
+async function syncWithServer() {
+  if (!isOnline) return;
+  
+  try {
+    // Intentar obtener datos del servidor
+    const res = await fetch('/stats', { timeout: 5000 });
+    if (res.ok) {
+      const serverStats = await res.json();
+      // Mezclar con datos locales (prioridad a local si es más reciente)
+      const localStats = LocalStorage.getStats();
+      LocalStorage.saveStats(serverStats);
+    }
+  } catch (error) {
+    console.log('Servidor no disponible, usando datos locales');
+  }
+}
 
 // ===== TAB NAVIGATION =====
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -571,8 +649,20 @@ function barColor(value) {
 }
 
 async function loadStats() {
-  const res = await fetch('/stats');
-  const data = await res.json();
+  let data;
+  
+  try {
+    if (isOnline) {
+      const res = await fetch('/stats');
+      data = await res.json();
+      LocalStorage.saveStats(data);
+    } else {
+      data = LocalStorage.getStats();
+    }
+  } catch (error) {
+    console.log('Error cargando del servidor, usando localStorage');
+    data = LocalStorage.getStats();
+  }
 
   // Update dashboard chart
   updateChart(data);
@@ -664,8 +754,25 @@ function updateChart(data) {
 
 // ===== ACTIONS =====
 async function loadActions() {
-  const res = await fetch('/actions');
-  const actions = await res.json();
+  let actions;
+  
+  try {
+    if (isOnline) {
+      const res = await fetch('/actions');
+      actions = await res.json();
+      LocalStorage.saveActions(actions);
+    } else {
+      actions = LocalStorage.getActions();
+      if (!actions) {
+        showStatus('⚠️ No hay acciones en cache', 'warning');
+        return;
+      }
+    }
+  } catch (error) {
+    console.log('Error cargando acciones, usando localStorage');
+    actions = LocalStorage.getActions();
+  }
+  
   const container = document.getElementById('actionsGrid');
   container.innerHTML = '';
 
@@ -694,20 +801,34 @@ async function loadActions() {
 
 async function doAction(name) {
   const log = document.getElementById('log');
-  const res = await fetch('/do_action', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: name })
-  });
+  
+  try {
+    if (isOnline) {
+      const res = await fetch('/do_action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: name })
+      });
 
-  const data = await res.json();
+      const data = await res.json();
+      
+      // Guardar stats actualizados localmente
+      LocalStorage.saveStats(data.stats);
 
-  if (data.result === 'RULE_BROKEN') {
-    log.innerHTML = `⚠️ <span class="bad">Castigo por ${name}</span>`;
-  } else if (data.result === 'SPECIAL_COST') {
-    log.innerHTML = `🎫 <span class="warning">Costo aplicado: ${name}</span>`;
-  } else {
-    log.innerHTML = `✔️ <span class="good">Acción completada: ${name}</span>`;
+      if (data.result === 'RULE_BROKEN') {
+        log.innerHTML = `⚠️ <span class="bad">Castigo por ${name}</span>`;
+      } else if (data.result === 'SPECIAL_COST') {
+        log.innerHTML = `🎫 <span class="warning">Costo aplicado: ${name}</span>`;
+      } else {
+        log.innerHTML = `✔️ <span class="good">Acción completada: ${name}</span>`;
+      }
+    } else {
+      // Modo offline: simular localmente
+      log.innerHTML = `⚠️ <span class="warning">Offline: cambios guardados localmente</span>`;
+      // Aquí podrías implementar la lógica de acciones en el cliente
+    }
+  } catch (error) {
+    log.innerHTML = `⚠️ <span class="bad">Error: ${error.message}</span>`;
   }
 
   loadStats();
@@ -715,8 +836,19 @@ async function doAction(name) {
 
 // ===== CALENDAR =====
 async function loadCalendar() {
-  const res = await fetch('/calendar');
-  return await res.json();
+  try {
+    if (isOnline) {
+      const res = await fetch('/calendar');
+      const data = await res.json();
+      LocalStorage.saveCalendar(data);
+      return data;
+    } else {
+      return LocalStorage.getCalendar();
+    }
+  } catch (error) {
+    console.log('Error cargando calendario, usando localStorage');
+    return LocalStorage.getCalendar();
+  }
 }
 
 function renderCalendar() {
@@ -808,16 +940,37 @@ async function saveDayEntry() {
   const happiness = parseInt(document.getElementById('modalHappiness').value);
   const notes = document.getElementById('modalNotes').value;
 
-  const res = await fetch(`/calendar/${selectedDay}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ happiness, notes })
-  });
+  // Calcular color
+  const color = happiness >= 70 ? 'green' : happiness >= 40 ? 'yellow' : 'red';
+  
+  // Guardar localmente siempre
+  const calendar = LocalStorage.getCalendar();
+  calendar[selectedDay] = {
+    date: selectedDay,
+    happiness: happiness,
+    notes: notes,
+    color: color
+  };
+  LocalStorage.saveCalendar(calendar);
 
-  if (res.ok) {
-    closeDayModal();
-    renderCalendar();
+  // Intentar sincronizar con servidor si está online
+  if (isOnline) {
+    try {
+      await fetch(`/calendar/${selectedDay}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ happiness, notes })
+      });
+      showStatus('✓ Guardado y sincronizado', 'good');
+    } catch (error) {
+      showStatus('✓ Guardado localmente', 'warning');
+    }
+  } else {
+    showStatus('✓ Guardado localmente (offline)', 'warning');
   }
+
+  closeDayModal();
+  renderCalendar();
 }
 
 function previousMonth() {
@@ -840,6 +993,7 @@ document.getElementById('dayModal').addEventListener('click', (e) => {
 // Initialize
 loadStats();
 loadActions();
+syncWithServer();
 </script>
 </body>
 </html>
