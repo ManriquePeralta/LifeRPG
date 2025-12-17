@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request, render_template
 from datetime import date
-from models import Stats
+from models import Stats, Calendar
 from models import Player
 from actions import ALL_ACTIONS
 
@@ -63,6 +63,11 @@ def do_action():
         action.apply_penalty(player)
         result = "RULE_BROKEN"
 
+    # Registrar en el calendario
+    today = str(date.today())
+    happiness_value = player.stats.get("felicidad")
+    notes = data.get("notes", "")
+    player.calendar.update_entry(today, happiness_value, notes)
 
     return jsonify({
     "result": result,
@@ -71,6 +76,28 @@ def do_action():
     "allowed": action.is_allowed(player),
     "stats": player.stats.values
 })
+
+
+@app.route("/calendar", methods=["GET"])
+def get_calendar():
+    return jsonify(player.calendar.get_all())
+
+
+@app.route("/calendar/<day>", methods=["GET"])
+def get_day(day):
+    entry = player.calendar.get_entry(day)
+    if entry:
+        return jsonify(entry)
+    return jsonify({"error": "Día no encontrado"}), 404
+
+
+@app.route("/calendar/<day>", methods=["POST"])
+def update_day(day):
+    data = request.json
+    notes = data.get("notes", "")
+    happiness = data.get("happiness", 50)
+    player.calendar.update_entry(day, happiness, notes)
+    return jsonify({"success": True, "data": player.calendar.get_entry(day)})
 
 
 @app.route("/")

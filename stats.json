@@ -1,10 +1,10 @@
-{ 
-  "salud": 60,
-  "estudios": 55,
+{
+  "salud": 65,
+  "estudios": 63,
   "amistades": 60,
   "economia": 50,
-  "disciplina": 50,
+  "disciplina": 63,
   "familia": 65,
   "relacion": 80,
-  "felicidad": 70
+  "felicidad": 67
 }
