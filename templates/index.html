@@ -2,48 +2,118 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Life RPG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#020617">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Life RPG ⚔️</title>
   <link rel="manifest" href="/static/manifest.json">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/static/sw.js");
+  navigator.serviceWorker.register("/static/sw.js").then(() => console.log('✅ PWA activa'));
 }
 </script>
 
   <style>
+    :root {
+      --primary: #38bdf8;
+      --secondary: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg-dark: #020617;
+      --bg-card: rgba(255,255,255,0.05);
+    }
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: radial-gradient(circle at top, #111827, #020617);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
       color: #e5e7eb;
       min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 70px;
     }
 
-    h1 {
-      text-align: center;
-      padding: 20px 0 10px;
-      font-size: 2.2rem;
-      letter-spacing: 1px;
-      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    /* ===== HEADER MEJORADO ===== */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(2, 6, 23, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary), #0ea5e9);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      background-clip: text;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    h2 {
-      margin-top: 30px;
-      margin-bottom: 20px;
-      font-size: 1.4rem;
-      padding-left: 16px;
-      border-left: 4px solid #38bdf8;
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--secondary);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.offline {
+      background: var(--warning);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .icon-btn {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: #e5e7eb;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.95);
+      background: rgba(255,255,255,0.2);
     }
 
     .container {
@@ -52,249 +122,346 @@ if ("serviceWorker" in navigator) {
       padding: 16px;
     }
 
-    /* ===== TABS ===== */
-    .tabs {
+    /* ===== BOTTOM NAV (MOBILE) ===== */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 99;
+      background: rgba(2, 6, 23, 0.98);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255,255,255,0.1);
       display: flex;
-      gap: 10px;
-      margin-bottom: 24px;
-      border-bottom: 2px solid rgba(255,255,255,0.1);
+      justify-content: space-around;
+      padding: 8px 0;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
     }
 
-    .tab-btn {
-      padding: 12px 20px;
-      background: none;
-      border: none;
-      border-bottom: 3px solid transparent;
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px;
       color: #9ca3af;
-      cursor: pointer;
-      font-size: 1rem;
+      font-size: 0.7rem;
       font-weight: 600;
-      transition: all 0.3s ease;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-radius: 12px;
     }
 
-    .tab-btn.active {
-      color: #38bdf8;
-      border-bottom-color: #38bdf8;
+    .nav-item.active {
+      color: var(--primary);
+      background: rgba(56, 189, 248, 0.1);
     }
 
-    .tab-btn:hover {
-      color: #e5e7eb;
+    .nav-item .nav-icon {
+      font-size: 1.5rem;
     }
 
     .tab-content {
       display: none;
+      animation: fadeIn 0.3s;
     }
 
     .tab-content.active {
       display: block;
     }
 
-    /* ===== DASHBOARD ===== */
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-bottom: 30px;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    @media (max-width: 768px) {
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .chart-container {
-      background: rgba(255,255,255,0.05);
+    /* ===== CARDS MEJORADAS ===== */
+    .card {
+      background: var(--bg-card);
       border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+    }
+
+    .card-header {
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ===== DASHBOARD ===== */
+    .streak-card {
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .streak-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .streak-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
       align-items: center;
     }
 
-    .chart-title {
-      font-size: 1.1rem;
-      margin-bottom: 20px;
-      font-weight: 600;
-    }
-
-    #chartCanvas {
-      max-width: 300px;
-      max-height: 300px;
-    }
-
-    /* ===== FELICIDAD ===== */
-    .happiness-card {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    }
-
-    .happiness-title {
-      font-size: 1.1rem;
-      opacity: 0.9;
-      margin-bottom: 10px;
-    }
-
-    .happiness-value {
+    .streak-number {
       font-size: 3rem;
-      font-weight: bold;
+      font-weight: 800;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
 
-    .bar-container {
-      background: rgba(255,255,255,0.15);
-      border-radius: 999px;
-      overflow: hidden;
-      height: 14px;
-      margin-top: 8px;
-    }
-
-    .bar {
-      height: 100%;
-      width: 0%;
-      transition: width 0.4s ease, background 0.4s ease;
-    }
-
-    /* ===== STATS ===== */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 30px;
-    }
-
-    .stat-card {
-      background: rgba(255,255,255,0.05);
-      border-radius: 14px;
-      padding: 14px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
-      border-left: 4px solid #38bdf8;
-    }
-
-    .stat-name {
+    .streak-label {
       font-size: 0.9rem;
-      opacity: 0.85;
-      margin-bottom: 6px;
+      opacity: 0.9;
+    }
+
+    /* ===== QUICK STATS ===== */
+    .quick-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .quick-stat {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .quick-stat-icon {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    .quick-stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .quick-stat-label {
+      font-size: 0.75rem;
+      opacity: 0.7;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
-    .stat-value {
-      font-size: 1.3rem;
-      font-weight: bold;
-      margin-bottom: 6px;
+    /* ===== STATS GRID MEJORADO ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
     }
 
-    /* ===== ACTIONS ===== */
-    .actions {
+    @media (min-width: 640px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 16px;
+      border-left: 4px solid var(--primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s;
+    }
+
+    .stat-card:active {
+      transform: scale(0.98);
+    }
+
+    .stat-info {
+      flex: 1;
+    }
+
+    .stat-name {
+      font-size: 0.85rem;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .stat-bar {
+      width: 60px;
+      height: 60px;
+      position: relative;
+    }
+
+    .circular-progress {
+      transform: rotate(-90deg);
+    }
+
+    /* ===== ACTIONS MEJORADAS ===== */
+    .actions-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 640px) {
+      .actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
     .action-card {
-      background: rgba(255,255,255,0.04);
+      background: var(--bg-card);
       border-radius: 14px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.1);
-      transition: all 0.3s ease;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
     }
 
-    .action-card:hover {
+    .action-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--primary), var(--secondary));
+    }
+
+    .action-card:active {
+      transform: scale(0.98);
       background: rgba(255,255,255,0.08);
-      border-color: rgba(255,255,255,0.2);
+    }
+
+    .action-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 12px;
     }
 
     .action-name {
-      font-weight: 600;
-      margin-bottom: 6px;
       font-size: 1rem;
-    }
-
-    .action-meta {
-      font-size: 0.8rem;
-      opacity: 0.75;
-      margin-bottom: 10px;
-    }
-
-    button {
-      border: none;
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-      color: #020617;
       font-weight: 600;
-      transition: transform 0.1s ease, opacity 0.2s ease;
     }
 
-    button:hover {
-      transform: scale(1.03);
-      opacity: 0.9;
-    }
-
-    button:active {
-      transform: scale(0.97);
-    }
-
-    #log {
-      margin: 20px 0;
-      text-align: center;
-      min-height: 24px;
-      font-size: 0.95rem;
-      padding: 12px;
-      background: rgba(255,255,255,0.05);
+    .action-badge {
+      font-size: 0.7rem;
+      padding: 4px 8px;
       border-radius: 8px;
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--primary);
+      text-transform: uppercase;
+      font-weight: 600;
     }
 
-    .bad { color: #f87171; }
-    .good { color: #4ade80; }
-    .warning { color: #fbbf24; }
-
-    /* ===== CALENDAR ===== */
-    .calendar-container {
-      background: rgba(255,255,255,0.05);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    .action-badge.special {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--warning);
     }
 
+    .action-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--primary), #0ea5e9);
+      color: #020617;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+    }
+
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* ===== CALENDARIO MEJORADO ===== */
     .calendar-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
-    .calendar-header button {
-      padding: 8px 16px;
-      font-size: 0.9rem;
+    .calendar-nav-btn {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.1);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.2s;
+    }
+
+    .calendar-nav-btn:active {
+      transform: scale(0.95);
     }
 
     .month-year {
-      font-size: 1.3rem;
-      font-weight: 600;
+      font-size: 1.2rem;
+      font-weight: 700;
     }
 
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
+      gap: 6px;
     }
 
     .calendar-day-header {
       text-align: center;
       font-weight: 600;
-      padding: 10px;
-      opacity: 0.7;
-      font-size: 0.85rem;
+      padding: 8px 0;
+      opacity: 0.6;
+      font-size: 0.75rem;
     }
 
     .calendar-day {
@@ -304,18 +471,15 @@ if ("serviceWorker" in navigator) {
       align-items: center;
       justify-content: center;
       border-radius: 10px;
+      background: var(--bg-card);
+      border: 2px solid rgba(255,255,255,0.05);
       cursor: pointer;
-      background: rgba(255,255,255,0.05);
-      border: 2px solid rgba(255,255,255,0.1);
-      transition: all 0.3s ease;
       font-weight: 600;
-      position: relative;
-      overflow: hidden;
+      transition: all 0.2s;
     }
 
-    .calendar-day:hover {
-      border-color: rgba(255,255,255,0.3);
-      transform: translateY(-2px);
+    .calendar-day:active {
+      transform: scale(0.95);
     }
 
     .calendar-day.empty {
@@ -324,323 +488,529 @@ if ("serviceWorker" in navigator) {
       cursor: default;
     }
 
-    .calendar-day.empty:hover {
-      transform: none;
-    }
-
     .calendar-day.green {
-      background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(22, 163, 74, 0.3));
-      border-color: #22c55e;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(22, 163, 74, 0.2));
+      border-color: var(--secondary);
     }
 
     .calendar-day.yellow {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(217, 119, 6, 0.3));
-      border-color: #f59e0b;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(217, 119, 6, 0.2));
+      border-color: var(--warning);
     }
 
     .calendar-day.red {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(220, 38, 38, 0.3));
-      border-color: #ef4444;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(220, 38, 38, 0.2));
+      border-color: var(--danger);
     }
 
-    .calendar-day .day-number {
-      font-size: 1rem;
+    .day-number {
+      font-size: 0.95rem;
     }
 
-    .calendar-day .day-indicator {
-      font-size: 0.6rem;
+    .day-indicator {
+      font-size: 0.7rem;
       margin-top: 2px;
-      opacity: 0.6;
     }
 
-    .day-modal {
+    /* ===== MODAL ===== */
+    .modal {
       display: none;
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
+      right: 0;
+      bottom: 0;
       z-index: 1000;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
       align-items: center;
       justify-content: center;
+      padding: 20px;
     }
 
-    .day-modal.active {
+    .modal.active {
       display: flex;
     }
 
-    .day-modal-content {
+    .modal-content {
       background: #111827;
-      border-radius: 16px;
+      border-radius: 20px;
       padding: 24px;
       max-width: 500px;
-      width: 90%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-      border: 2px solid rgba(255,255,255,0.1);
-    }
-
-    .day-modal-header {
-      font-size: 1.3rem;
-      font-weight: 600;
-      margin-bottom: 16px;
-      color: #38bdf8;
-    }
-
-    .day-modal-info {
-      margin-bottom: 16px;
-    }
-
-    .day-modal-info label {
-      display: block;
-      font-size: 0.9rem;
-      margin-bottom: 6px;
-      opacity: 0.8;
-    }
-
-    .day-modal-info input,
-    .day-modal-info textarea {
       width: 100%;
-      padding: 10px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 8px;
-      color: #e5e7eb;
-      font-family: inherit;
-      margin-bottom: 16px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      border: 1px solid rgba(255,255,255,0.1);
+      animation: slideUp 0.3s;
     }
 
-    .day-modal-info textarea {
-      resize: vertical;
-      min-height: 100px;
+    @keyframes slideUp {
+      from { transform: translateY(100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
 
-    .day-modal-buttons {
+    .modal-header {
       display: flex;
-      gap: 10px;
-      justify-content: flex-end;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
     }
 
-    .day-modal-buttons button {
-      padding: 10px 16px;
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--primary);
     }
 
-    .btn-cancel {
-      background: rgba(255,255,255,0.1);
-      color: #e5e7eb;
-    }
-
-    .btn-close {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      width: 30px;
-      height: 30px;
-      padding: 0;
+    .close-btn {
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: rgba(255,255,255,0.1);
+      border: none;
       color: #e5e7eb;
+      font-size: 1.3rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: none;
-      font-size: 1.2rem;
-      transition: all 0.2s ease;
+      transition: all 0.2s;
     }
 
-    .btn-close:hover {
-      background: rgba(255,255,255,0.2);
+    .close-btn:active {
+      transform: scale(0.95);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      opacity: 0.8;
+      font-weight: 600;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      color: #e5e7eb;
+      font-family: inherit;
+      font-size: 1rem;
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: rgba(255,255,255,0.08);
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #0ea5e9);
+      color: #020617;
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: #e5e7eb;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #111827;
+      padding: 16px 24px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.1);
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      transition: all 0.3s;
+      max-width: 90%;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast-icon {
+      font-size: 1.5rem;
+    }
+
+    .toast-message {
+      font-weight: 600;
+    }
+
+    /* ===== UTILIDADES ===== */
+    .mt-16 { margin-top: 16px; }
+    .mb-16 { margin-bottom: 16px; }
+    .text-center { text-align: center; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (min-width: 768px) {
+      .bottom-nav {
+        display: none;
+      }
+
+      body {
+        padding-bottom: 20px;
+      }
+
+      .header-content {
+        padding: 16px 32px;
+      }
+
+      .container {
+        padding: 24px;
+      }
+
+      .desktop-tabs {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        border-bottom: 2px solid rgba(255,255,255,0.1);
+      }
+
+      .desktop-tab {
+        padding: 12px 24px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #9ca3af;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s;
+      }
+
+      .desktop-tab.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+      }
+    }
+
+    @media (max-width: 767px) {
+      .desktop-tabs {
+        display: none;
+      }
+    }
+
+    /* ===== CHART ===== */
+    .chart-wrapper {
+      position: relative;
+      height: 280px;
+      margin: 20px 0;
     }
   </style>
 </head>
 <body>
-  <h1>⚔️ Life RPG</h1>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-content">
+      <div class="logo">
+        <span>⚔️</span>
+        <span>Life RPG</span>
+      </div>
+      <div class="header-actions">
+        <div id="statusDot" class="status-dot"></div>
+        <button class="icon-btn" onclick="showExportModal()" title="Exportar datos">
+          💾
+        </button>
+      </div>
+    </div>
+  </div>
 
   <div class="container">
-    <!-- TABS -->
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
-      <button class="tab-btn" data-tab="stats">📈 Estadísticas</button>
-      <button class="tab-btn" data-tab="actions">🎯 Acciones</button>
-      <button class="tab-btn" data-tab="calendar">📅 Calendario</button>
+    <!-- DESKTOP TABS -->
+    <div class="desktop-tabs">
+      <button class="desktop-tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+      <button class="desktop-tab" onclick="switchTab('stats')">📈 Estadísticas</button>
+      <button class="desktop-tab" onclick="switchTab('actions')">🎯 Acciones</button>
+      <button class="desktop-tab" onclick="switchTab('calendar')">📅 Calendario</button>
     </div>
 
     <!-- TAB: DASHBOARD -->
     <div id="dashboard" class="tab-content active">
-      <div class="dashboard-grid">
-        <!-- Gráfico Circular -->
-        <div class="chart-container">
-          <div class="chart-title">📊 Distribución de Estadísticas</div>
-          <canvas id="chartCanvas"></canvas>
-        </div>
-
-        <!-- Felicidad -->
-        <div class="happiness-card">
-          <div class="happiness-title">😄 Felicidad General</div>
-          <div id="happinessValue" class="happiness-value">0</div>
-          <div class="bar-container">
-            <div id="happinessBar" class="bar"></div>
+      <!-- Streak Card -->
+      <div class="streak-card">
+        <div class="streak-content">
+          <div>
+            <div class="streak-label">🔥 Racha actual</div>
+            <div class="streak-number" id="streakDays">0</div>
+            <div class="streak-label">días consecutivos</div>
           </div>
-          <div id="log" style="margin-top: 16px; background: none; border-radius: 0;"></div>
+          <div style="font-size: 4rem;">🎯</div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="quick-stats">
+        <div class="quick-stat">
+          <div class="quick-stat-icon">😄</div>
+          <div class="quick-stat-value" id="happyQuick">0</div>
+          <div class="quick-stat-label">Felicidad</div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-stat-icon">⭐</div>
+          <div class="quick-stat-value" id="avgQuick">0</div>
+          <div class="quick-stat-label">Promedio</div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-stat-icon">✅</div>
+          <div class="quick-stat-value" id="actionsQuick">0</div>
+          <div class="quick-stat-label">Acciones hoy</div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-stat-icon">📅</div>
+          <div class="quick-stat-value" id="daysQuick">0</div>
+          <div class="quick-stat-label">Días registrados</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📊 Distribución de Stats</div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="chartCanvas"></canvas>
         </div>
       </div>
     </div>
 
     <!-- TAB: STATS -->
     <div id="stats" class="tab-content">
-      <h2>📈 Tus Estadísticas</h2>
-      <div id="statsGrid" class="stats-grid"></div>
+      <div class="stats-grid" id="statsGrid"></div>
     </div>
 
     <!-- TAB: ACTIONS -->
     <div id="actions" class="tab-content">
-      <h2>🎯 Realizar Acciones</h2>
-      <div id="actionsGrid" class="actions"></div>
+      <div class="actions-grid" id="actionsGrid"></div>
     </div>
 
     <!-- TAB: CALENDAR -->
     <div id="calendar" class="tab-content">
-      <h2>📅 Tu Calendario</h2>
-      <div class="calendar-container">
+      <div class="card">
         <div class="calendar-header">
-          <button onclick="previousMonth()">← Anterior</button>
+          <button class="calendar-nav-btn" onclick="previousMonth()">←</button>
           <div class="month-year" id="monthYear">Enero 2024</div>
-          <button onclick="nextMonth()">Siguiente →</button>
+          <button class="calendar-nav-btn" onclick="nextMonth()">→</button>
         </div>
         <div class="calendar-grid" id="calendarGrid"></div>
       </div>
     </div>
   </div>
 
-  <!-- Modal para editar día -->
-  <div class="day-modal" id="dayModal">
-    <div class="day-modal-content">
-      <button class="btn-close" onclick="closeDayModal()">✕</button>
-      <div class="day-modal-header" id="dayModalTitle">Enero 1, 2024</div>
+  <!-- BOTTOM NAV (MOBILE) -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('dashboard')">
+      <div class="nav-icon">📊</div>
+      <div>Inicio</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('stats')">
+      <div class="nav-icon">📈</div>
+      <div>Stats</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('actions')">
+      <div class="nav-icon">🎯</div>
+      <div>Acciones</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('calendar')">
+      <div class="nav-icon">📅</div>
+      <div>Calendario</div>
+    </div>
+  </div>
+
+  <!-- MODAL: Day Entry -->
+  <div class="modal" id="dayModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="dayModalTitle">Editar Día</div>
+        <button class="close-btn" onclick="closeModal('dayModal')">✕</button>
+      </div>
       
-      <div class="day-modal-info">
-        <label>Felicidad (0-100):</label>
-        <input type="number" id="modalHappiness" min="0" max="100" value="50">
+      <div class="form-group">
+        <label class="form-label">Felicidad (0-100):</label>
+        <input type="number" class="form-input" id="modalHappiness" min="0" max="100" value="50">
       </div>
 
-      <div class="day-modal-info">
-        <label>Notas de hoy:</label>
-        <textarea id="modalNotes" placeholder="¿Qué hiciste hoy? ¿Cómo te sentiste?"></textarea>
+      <div class="form-group">
+        <label class="form-label">Notas del día:</label>
+        <textarea class="form-input form-textarea" id="modalNotes" placeholder="¿Qué hiciste hoy? ¿Cómo te sentiste?"></textarea>
       </div>
 
-      <div class="day-modal-buttons">
-        <button class="btn-cancel" onclick="closeDayModal()">Cancelar</button>
-        <button onclick="saveDayEntry()">Guardar</button>
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModal('dayModal')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveDayEntry()">Guardar</button>
       </div>
     </div>
   </div>
 
+  <!-- MODAL: Export Data -->
+  <div class="modal" id="exportModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">💾 Exportar / Importar Datos</div>
+        <button class="close-btn" onclick="closeModal('exportModal')">✕</button>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Exportar tus datos:</label>
+        <button class="btn btn-primary" onclick="exportData()" style="width: 100%;">
+          📥 Descargar datos (JSON)
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Importar datos:</label>
+        <input type="file" id="importFile" accept=".json" class="form-input">
+        <button class="btn btn-secondary" onclick="importData()" style="width: 100%; margin-top: 10px;">
+          📤 Cargar archivo
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">⚠️ Advertencia:</label>
+        <p style="font-size: 0.85rem; opacity: 0.7;">
+          Importar datos sobrescribirá tus estadísticas actuales. Asegúrate de exportar una copia de seguridad primero.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast">
+    <div class="toast-icon" id="toastIcon"></div>
+    <div class="toast-message" id="toastMessage"></div>
+  </div>
+
 <script>
-const API = "";
+// ===== VARIABLES GLOBALES =====
 let currentMonth = new Date();
 let selectedDay = null;
 let chartInstance = null;
 let isOnline = navigator.onLine;
+let actionsToday = 0;
 
-// ===== SISTEMA DE ALMACENAMIENTO LOCAL =====
-const LocalStorage = {
-  getStats: function() {
-    const stored = localStorage.getItem('liferpg_stats');
-    return stored ? JSON.parse(stored) : {
-      "salud": 60,
-      "estudios": 55,
-      "amistades": 60,
-      "economia": 50,
-      "disciplina": 50,
-      "familia": 65,
-      "relacion": 80,
-      "felicidad": 70
-    };
+// ===== SISTEMA DE ALMACENAMIENTO =====
+const Storage = {
+  getStats: () => JSON.parse(localStorage.getItem('liferpg_stats')) || {
+    "salud": 60, "estudios": 55, "amistades": 60, "economia": 50,
+    "disciplina": 50, "familia": 65, "relacion": 80, "felicidad": 70
   },
-  
-  saveStats: function(stats) {
-    localStorage.setItem('liferpg_stats', JSON.stringify(stats));
-  },
-  
-  getCalendar: function() {
-    const stored = localStorage.getItem('liferpg_calendar');
-    return stored ? JSON.parse(stored) : {};
-  },
-  
-  saveCalendar: function(calendar) {
-    localStorage.setItem('liferpg_calendar', JSON.stringify(calendar));
-  },
-  
-  getActions: function() {
-    const stored = localStorage.getItem('liferpg_actions');
-    return stored ? JSON.parse(stored) : null;
-  },
-  
-  saveActions: function(actions) {
-    localStorage.setItem('liferpg_actions', JSON.stringify(actions));
-  }
+  saveStats: (stats) => localStorage.setItem('liferpg_stats', JSON.stringify(stats)),
+  getCalendar: () => JSON.parse(localStorage.getItem('liferpg_calendar')) || {},
+  saveCalendar: (cal) => localStorage.setItem('liferpg_calendar', JSON.stringify(cal)),
+  getActions: () => JSON.parse(localStorage.getItem('liferpg_actions')) || null,
+  saveActions: (actions) => localStorage.setItem('liferpg_actions', JSON.stringify(actions)),
+  getStreak: () => parseInt(localStorage.getItem('liferpg_streak')) || 0,
+  saveStreak: (streak) => localStorage.setItem('liferpg_streak', streak.toString()),
+  getActionsToday: () => JSON.parse(localStorage.getItem('liferpg_actions_today')) || [],
+  saveActionsToday: (actions) => localStorage.setItem('liferpg_actions_today', JSON.stringify(actions))
 };
 
-// Detectar cambios de conectividad
+// ===== CONECTIVIDAD =====
 window.addEventListener('online', () => {
   isOnline = true;
-  showStatus('✓ Conectado', 'good');
+  updateStatusDot();
+  showToast('✅', 'Conectado', 2000);
   syncWithServer();
 });
 
 window.addEventListener('offline', () => {
   isOnline = false;
-  showStatus('⚠️ Modo offline - datos guardados localmente', 'warning');
+  updateStatusDot();
+  showToast('⚠️', 'Modo offline', 2000);
 });
 
-function showStatus(message, type) {
-  const log = document.getElementById('log');
-  if (log) {
-    log.innerHTML = `<span class="${type}">${message}</span>`;
-    setTimeout(() => log.innerHTML = '', 3000);
-  }
+function updateStatusDot() {
+  const dot = document.getElementById('statusDot');
+  dot.className = isOnline ? 'status-dot' : 'status-dot offline';
 }
 
-// Sincronizar con servidor cuando esté online
 async function syncWithServer() {
   if (!isOnline) return;
-  
   try {
-    // Intentar obtener datos del servidor
-    const res = await fetch('/stats', { timeout: 5000 });
+    const res = await fetch('/stats');
     if (res.ok) {
       const serverStats = await res.json();
-      // Mezclar con datos locales (prioridad a local si es más reciente)
-      const localStats = LocalStorage.getStats();
-      LocalStorage.saveStats(serverStats);
+      Storage.saveStats(serverStats);
     }
-  } catch (error) {
-    console.log('Servidor no disponible, usando datos locales');
+  } catch (e) {
+    console.log('Usando datos locales');
   }
 }
 
-// ===== TAB NAVIGATION =====
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const tabName = btn.dataset.tab;
-    
-    // Remove active class from all tabs and buttons
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    
-    // Add active class to clicked button and corresponding tab
-    btn.classList.add('active');
-    document.getElementById(tabName).classList.add('active');
+// ===== TOAST =====
+function showToast(icon, message, duration = 3000) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastIcon').innerText = icon;
+  document.getElementById('toastMessage').innerText = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), duration);
+}
 
-    // Render calendar when calendar tab is clicked
-    if (tabName === 'calendar') {
-      renderCalendar();
-    }
-  });
-});
+// ===== TABS =====
+function switchTab(tabName) {
+  // Update content
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById(tabName).classList.add('active');
+  
+  // Update bottom nav
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-item')[
+    ['dashboard', 'stats', 'actions', 'calendar'].indexOf(tabName)
+  ]?.classList.add('active');
+  
+  // Update desktop tabs
+  document.querySelectorAll('.desktop-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.desktop-tab')[
+    ['dashboard', 'stats', 'actions', 'calendar'].indexOf(tabName)
+  ]?.classList.add('active');
 
-// ===== STATS & CHART =====
+  if (tabName === 'calendar') renderCalendar();
+}
+
+// ===== STATS =====
 function barColor(value) {
   if (value >= 80) return '#22c55e';
   if (value >= 50) return '#38bdf8';
@@ -650,61 +1020,64 @@ function barColor(value) {
 
 async function loadStats() {
   let data;
-  
   try {
     if (isOnline) {
       const res = await fetch('/stats');
       data = await res.json();
-      LocalStorage.saveStats(data);
+      Storage.saveStats(data);
     } else {
-      data = LocalStorage.getStats();
+      data = Storage.getStats();
     }
-  } catch (error) {
-    console.log('Error cargando del servidor, usando localStorage');
-    data = LocalStorage.getStats();
+  } catch (e) {
+    data = Storage.getStats();
   }
 
-  // Update dashboard chart
+  // Update quick stats
+  document.getElementById('happyQuick').innerText = data.felicidad;
+  const avg = Math.round(Object.values(data).filter((v,i) => Object.keys(data)[i] !== 'felicidad').reduce((a,b) => a+b, 0) / 7);
+  document.getElementById('avgQuick').innerText = avg;
+  
+  // Actions today
+  const today = new Date().toISOString().split('T')[0];
+  const todayActions = Storage.getActionsToday();
+  const todayCount = todayActions.filter(a => a.startsWith(today)).length;
+  document.getElementById('actionsQuick').innerText = todayCount;
+
+  // Days registered
+  const calendar = Storage.getCalendar();
+  document.getElementById('daysQuick').innerText = Object.keys(calendar).length;
+
+  // Update streak
+  updateStreak();
+
+  // Update chart
   updateChart(data);
 
   // Update stats grid
   const statsDiv = document.getElementById('statsGrid');
   statsDiv.innerHTML = '';
 
-  // Add happiness first
-  const happy = data.felicidad;
-  document.getElementById('happinessValue').innerText = happy;
-  const hb = document.getElementById('happinessBar');
-  hb.style.width = happy + '%';
-  hb.style.background = barColor(happy);
-
-  // Add other stats
   for (const [key, value] of Object.entries(data)) {
     if (key === 'felicidad') continue;
 
     const card = document.createElement('div');
     card.className = 'stat-card';
+    card.style.borderLeftColor = barColor(value);
 
-    const name = document.createElement('div');
-    name.className = 'stat-name';
-    name.innerText = key;
-
-    const val = document.createElement('div');
-    val.className = 'stat-value';
-    val.innerText = value;
-
-    const barC = document.createElement('div');
-    barC.className = 'bar-container';
-
-    const bar = document.createElement('div');
-    bar.className = 'bar';
-    bar.style.width = value + '%';
-    bar.style.background = barColor(value);
-
-    barC.appendChild(bar);
-    card.appendChild(name);
-    card.appendChild(val);
-    card.appendChild(barC);
+    card.innerHTML = `
+      <div class="stat-info">
+        <div class="stat-name">${key}</div>
+        <div class="stat-value">${value}</div>
+      </div>
+      <div class="stat-bar">
+        <svg class="circular-progress" width="60" height="60">
+          <circle cx="30" cy="30" r="25" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="5"/>
+          <circle cx="30" cy="30" r="25" fill="none" stroke="${barColor(value)}" stroke-width="5"
+            stroke-dasharray="${Math.PI * 50}" stroke-dashoffset="${Math.PI * 50 * (1 - value/100)}"
+            stroke-linecap="round"/>
+        </svg>
+      </div>
+    `;
 
     statsDiv.appendChild(card);
   }
@@ -712,17 +1085,11 @@ async function loadStats() {
 
 function updateChart(data) {
   const ctx = document.getElementById('chartCanvas').getContext('2d');
-  
   const labels = Object.keys(data).filter(k => k !== 'felicidad');
-  const values = Object.values(data).filter((v, i) => Object.keys(data)[i] !== 'felicidad');
-  const colors = [
-    '#38bdf8', '#22c55e', '#f59e0b', '#ef4444',
-    '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'
-  ];
+  const values = Object.values(data).filter((v,i) => Object.keys(data)[i] !== 'felicidad');
+  const colors = ['#38bdf8', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
-  if (chartInstance) {
-    chartInstance.destroy();
-  }
+  if (chartInstance) chartInstance.destroy();
 
   chartInstance = new Chart(ctx, {
     type: 'doughnut',
@@ -730,21 +1097,21 @@ function updateChart(data) {
       labels: labels.map(l => l.toUpperCase()),
       datasets: [{
         data: values,
-        backgroundColor: colors.slice(0, values.length),
+        backgroundColor: colors,
         borderColor: '#111827',
-        borderWidth: 2
+        borderWidth: 3
       }]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           position: 'bottom',
           labels: {
             color: '#e5e7eb',
-            padding: 15,
-            font: { size: 12 }
+            padding: 12,
+            font: { size: 11 }
           }
         }
       }
@@ -752,56 +1119,61 @@ function updateChart(data) {
   });
 }
 
+function updateStreak() {
+  const calendar = Storage.getCalendar();
+  const dates = Object.keys(calendar).sort().reverse();
+  let streak = 0;
+  let yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  for (let date of dates) {
+    const d = new Date(date);
+    const diff = Math.floor((yesterday - d) / (1000 * 60 * 60 * 24));
+    if (diff === streak) {
+      streak++;
+      yesterday = d;
+    } else break;
+  }
+  
+  Storage.saveStreak(streak);
+  document.getElementById('streakDays').innerText = streak;
+}
+
 // ===== ACTIONS =====
 async function loadActions() {
   let actions;
-  
   try {
     if (isOnline) {
       const res = await fetch('/actions');
       actions = await res.json();
-      LocalStorage.saveActions(actions);
+      Storage.saveActions(actions);
     } else {
-      actions = LocalStorage.getActions();
-      if (!actions) {
-        showStatus('⚠️ No hay acciones en cache', 'warning');
-        return;
-      }
+      actions = Storage.getActions() || [];
     }
-  } catch (error) {
-    console.log('Error cargando acciones, usando localStorage');
-    actions = LocalStorage.getActions();
+  } catch (e) {
+    actions = Storage.getActions() || [];
   }
-  
+
   const container = document.getElementById('actionsGrid');
   container.innerHTML = '';
 
   actions.forEach(a => {
     const card = document.createElement('div');
     card.className = 'action-card';
-
-    const name = document.createElement('div');
-    name.className = 'action-name';
-    name.innerText = a.name;
-
-    const meta = document.createElement('div');
-    meta.className = 'action-meta';
-    meta.innerText = a.type.toUpperCase();
-
-    const btn = document.createElement('button');
-    btn.innerText = 'Hacer';
-    btn.onclick = () => doAction(a.name);
-
-    card.appendChild(name);
-    card.appendChild(meta);
-    card.appendChild(btn);
+    
+    card.innerHTML = `
+      <div class="action-header">
+        <div class="action-name">${a.name}</div>
+        <div class="action-badge ${a.type === 'special' ? 'special' : ''}">${a.type}</div>
+      </div>
+      <button class="action-btn" onclick="doAction('${a.name}')">Hacer ✨</button>
+    `;
+    
     container.appendChild(card);
   });
 }
 
 async function doAction(name) {
-  const log = document.getElementById('log');
-  
   try {
     if (isOnline) {
       const res = await fetch('/do_action', {
@@ -809,28 +1181,29 @@ async function doAction(name) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: name })
       });
-
       const data = await res.json();
+      Storage.saveStats(data.stats);
       
-      // Guardar stats actualizados localmente
-      LocalStorage.saveStats(data.stats);
-
       if (data.result === 'RULE_BROKEN') {
-        log.innerHTML = `⚠️ <span class="bad">Castigo por ${name}</span>`;
+        showToast('⚠️', `Castigo por ${name}`, 3000);
       } else if (data.result === 'SPECIAL_COST') {
-        log.innerHTML = `🎫 <span class="warning">Costo aplicado: ${name}</span>`;
+        showToast('🎫', `Costo aplicado: ${name}`, 3000);
       } else {
-        log.innerHTML = `✔️ <span class="good">Acción completada: ${name}</span>`;
+        showToast('✅', `¡${name} completado!`, 3000);
       }
+      
+      // Register action today
+      const today = new Date().toISOString();
+      const todayActions = Storage.getActionsToday();
+      todayActions.push(today);
+      Storage.saveActionsToday(todayActions);
     } else {
-      // Modo offline: simular localmente
-      log.innerHTML = `⚠️ <span class="warning">Offline: cambios guardados localmente</span>`;
-      // Aquí podrías implementar la lógica de acciones en el cliente
+      showToast('⚠️', 'Offline: guardado localmente', 3000);
     }
-  } catch (error) {
-    log.innerHTML = `⚠️ <span class="bad">Error: ${error.message}</span>`;
+  } catch (e) {
+    showToast('❌', 'Error al ejecutar acción', 3000);
   }
-
+  
   loadStats();
 }
 
@@ -840,71 +1213,57 @@ async function loadCalendar() {
     if (isOnline) {
       const res = await fetch('/calendar');
       const data = await res.json();
-      LocalStorage.saveCalendar(data);
+      Storage.saveCalendar(data);
       return data;
-    } else {
-      return LocalStorage.getCalendar();
     }
-  } catch (error) {
-    console.log('Error cargando calendario, usando localStorage');
-    return LocalStorage.getCalendar();
-  }
+  } catch (e) {}
+  return Storage.getCalendar();
 }
 
 function renderCalendar() {
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
-
-  // Update header
   const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  
   document.getElementById('monthYear').innerText = `${monthNames[month]} ${year}`;
 
-  // Get calendar data
   loadCalendar().then(calendarData => {
     const grid = document.getElementById('calendarGrid');
     grid.innerHTML = '';
 
-    // Day headers
-    const dayHeaders = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-    dayHeaders.forEach(header => {
-      const headerDiv = document.createElement('div');
-      headerDiv.className = 'calendar-day-header';
-      headerDiv.innerText = header;
-      grid.appendChild(headerDiv);
+    const dayHeaders = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+    dayHeaders.forEach(h => {
+      const div = document.createElement('div');
+      div.className = 'calendar-day-header';
+      div.innerText = h;
+      grid.appendChild(div);
     });
 
-    // Get first day of month and number of days
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // Empty cells before month starts
     for (let i = 0; i < firstDay; i++) {
-      const emptyDay = document.createElement('div');
-      emptyDay.className = 'calendar-day empty';
-      grid.appendChild(emptyDay);
+      const div = document.createElement('div');
+      div.className = 'calendar-day empty';
+      grid.appendChild(div);
     }
 
-    // Days of month
     for (let day = 1; day <= daysInMonth; day++) {
       const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const entry = calendarData[dayStr];
       
-      const dayDiv = document.createElement('div');
-      dayDiv.className = 'calendar-day';
+      const div = document.createElement('div');
+      div.className = 'calendar-day';
+      if (entry) div.classList.add(entry.color);
       
-      if (entry) {
-        dayDiv.classList.add(entry.color);
-        dayDiv.innerHTML = `
-          <div class="day-number">${day}</div>
-          <div class="day-indicator">${entry.color === 'green' ? '✓' : entry.color === 'yellow' ? '=' : '✗'}</div>
-        `;
-      } else {
-        dayDiv.innerHTML = `<div class="day-number">${day}</div>`;
-      }
-
-      dayDiv.onclick = () => openDayModal(dayStr, entry);
-      grid.appendChild(dayDiv);
+      div.innerHTML = `
+        <div class="day-number">${day}</div>
+        ${entry ? `<div class="day-indicator">${entry.color === 'green' ? '✓' : entry.color === 'yellow' ? '=' : '✗'}</div>` : ''}
+      `;
+      
+      div.onclick = () => openDayModal(dayStr, entry);
+      grid.appendChild(div);
     }
   });
 }
@@ -916,22 +1275,12 @@ function openDayModal(dayStr, entry) {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   
   document.getElementById('dayModalTitle').innerText = 
-    `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    `${date.getDate()} de ${monthNames[date.getMonth()]}`;
   
-  if (entry) {
-    document.getElementById('modalHappiness').value = entry.happiness;
-    document.getElementById('modalNotes').value = entry.notes || '';
-  } else {
-    document.getElementById('modalHappiness').value = '50';
-    document.getElementById('modalNotes').value = '';
-  }
-
-  document.getElementById('dayModal').classList.add('active');
-}
-
-function closeDayModal() {
-  document.getElementById('dayModal').classList.remove('active');
-  selectedDay = null;
+  document.getElementById('modalHappiness').value = entry?.happiness || 50;
+  document.getElementById('modalNotes').value = entry?.notes || '';
+  
+  showModal('dayModal');
 }
 
 async function saveDayEntry() {
@@ -939,21 +1288,12 @@ async function saveDayEntry() {
 
   const happiness = parseInt(document.getElementById('modalHappiness').value);
   const notes = document.getElementById('modalNotes').value;
-
-  // Calcular color
   const color = happiness >= 70 ? 'green' : happiness >= 40 ? 'yellow' : 'red';
   
-  // Guardar localmente siempre
-  const calendar = LocalStorage.getCalendar();
-  calendar[selectedDay] = {
-    date: selectedDay,
-    happiness: happiness,
-    notes: notes,
-    color: color
-  };
-  LocalStorage.saveCalendar(calendar);
+  const calendar = Storage.getCalendar();
+  calendar[selectedDay] = { date: selectedDay, happiness, notes, color };
+  Storage.saveCalendar(calendar);
 
-  // Intentar sincronizar con servidor si está online
   if (isOnline) {
     try {
       await fetch(`/calendar/${selectedDay}`, {
@@ -961,16 +1301,17 @@ async function saveDayEntry() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ happiness, notes })
       });
-      showStatus('✓ Guardado y sincronizado', 'good');
-    } catch (error) {
-      showStatus('✓ Guardado localmente', 'warning');
+      showToast('✅', 'Guardado y sincronizado', 2000);
+    } catch (e) {
+      showToast('✅', 'Guardado localmente', 2000);
     }
   } else {
-    showStatus('✓ Guardado localmente (offline)', 'warning');
+    showToast('✅', 'Guardado localmente', 2000);
   }
 
-  closeDayModal();
+  closeModal('dayModal');
   renderCalendar();
+  updateStreak();
 }
 
 function previousMonth() {
@@ -983,14 +1324,78 @@ function nextMonth() {
   renderCalendar();
 }
 
-// Close modal on outside click
-document.getElementById('dayModal').addEventListener('click', (e) => {
-  if (e.target.id === 'dayModal') {
-    closeDayModal();
-  }
+// ===== MODAL =====
+function showModal(modalId) {
+  document.getElementById(modalId).classList.add('active');
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.remove('active');
+  if (modalId === 'dayModal') selectedDay = null;
+}
+
+// Click outside to close
+document.querySelectorAll('.modal').forEach(modal => {
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal(modal.id);
+  });
 });
 
-// Initialize
+// ===== EXPORT / IMPORT =====
+function showExportModal() {
+  showModal('exportModal');
+}
+
+function exportData() {
+  const data = {
+    stats: Storage.getStats(),
+    calendar: Storage.getCalendar(),
+    actions: Storage.getActions(),
+    streak: Storage.getStreak(),
+    exportDate: new Date().toISOString()
+  };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `liferpg_backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  showToast('✅', 'Datos exportados', 2000);
+}
+
+function importData() {
+  const file = document.getElementById('importFile').files[0];
+  if (!file) {
+    showToast('⚠️', 'Selecciona un archivo', 2000);
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      
+      if (data.stats) Storage.saveStats(data.stats);
+      if (data.calendar) Storage.saveCalendar(data.calendar);
+      if (data.actions) Storage.saveActions(data.actions);
+      if (data.streak) Storage.saveStreak(data.streak);
+      
+      showToast('✅', 'Datos importados correctamente', 3000);
+      closeModal('exportModal');
+      loadStats();
+      loadActions();
+    } catch (err) {
+      showToast('❌', 'Error al importar: archivo inválido', 3000);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ===== INIT =====
+updateStatusDot();
 loadStats();
 loadActions();
 syncWithServer();

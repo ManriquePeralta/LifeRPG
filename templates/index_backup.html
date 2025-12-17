@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#020617">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Life RPG</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/static/sw.js").then(() => {
+    console.log('✅ Service Worker registrado');
+  });
+}
+</script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+      color: #e5e7eb;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 80px;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(2, 6, 23, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 12px 0;
+    }
+
+    h1 {
+      text-align: center;
+      padding: 8px 0;
+      font-size: 1.8rem;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      padding: 4px 8px;
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid #22c55e;
+      border-radius: 12px;
+      color: #22c55e;
+      font-weight: 600;
+    }
+
+    .status-badge.offline {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: #f59e0b;
+      color: #f59e0b;
+    }
+
+    h2 {
+      margin-top: 30px;
+      margin-bottom: 20px;
+      font-size: 1.4rem;
+      padding-left: 16px;
+      border-left: 4px solid #38bdf8;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 16px;
+    }
+
+    /* ===== TABS ===== */
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid rgba(255,255,255,0.1);
+    }
+
+    .tab-btn {
+      padding: 12px 20px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+      color: #38bdf8;
+      border-bottom-color: #38bdf8;
+    }
+
+    .tab-btn:hover {
+      color: #e5e7eb;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* ===== DASHBOARD ===== */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chart-container {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .chart-title {
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    #chartCanvas {
+      max-width: 300px;
+      max-height: 300px;
+    }
+
+    /* ===== FELICIDAD ===== */
+    .happiness-card {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .happiness-title {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      margin-bottom: 10px;
+    }
+
+    .happiness-value {
+      font-size: 3rem;
+      font-weight: bold;
+    }
+
+    .bar-container {
+      background: rgba(255,255,255,0.15);
+      border-radius: 999px;
+      overflow: hidden;
+      height: 14px;
+      margin-top: 8px;
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      transition: width 0.4s ease, background 0.4s ease;
+    }
+
+    /* ===== STATS ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+      border-left: 4px solid #38bdf8;
+    }
+
+    .stat-name {
+      font-size: 0.9rem;
+      opacity: 0.85;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    /* ===== ACTIONS ===== */
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .action-card {
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.3s ease;
+    }
+
+    .action-card:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .action-name {
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 1rem;
+    }
+
+    .action-meta {
+      font-size: 0.8rem;
+      opacity: 0.75;
+      margin-bottom: 10px;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      color: #020617;
+      font-weight: 600;
+      transition: transform 0.1s ease, opacity 0.2s ease;
+    }
+
+    button:hover {
+      transform: scale(1.03);
+      opacity: 0.9;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    #log {
+      margin: 20px 0;
+      text-align: center;
+      min-height: 24px;
+      font-size: 0.95rem;
+      padding: 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+    }
+
+    .bad { color: #f87171; }
+    .good { color: #4ade80; }
+    .warning { color: #fbbf24; }
+
+    /* ===== CALENDAR ===== */
+    .calendar-container {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .calendar-header button {
+      padding: 8px 16px;
+      font-size: 0.9rem;
+    }
+
+    .month-year {
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+
+    .calendar-day-header {
+      text-align: center;
+      font-weight: 600;
+      padding: 10px;
+      opacity: 0.7;
+      font-size: 0.85rem;
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      transition: all 0.3s ease;
+      font-weight: 600;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .calendar-day:hover {
+      border-color: rgba(255,255,255,0.3);
+      transform: translateY(-2px);
+    }
+
+    .calendar-day.empty {
+      background: transparent;
+      border: none;
+      cursor: default;
+    }
+
+    .calendar-day.empty:hover {
+      transform: none;
+    }
+
+    .calendar-day.green {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(22, 163, 74, 0.3));
+      border-color: #22c55e;
+    }
+
+    .calendar-day.yellow {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(217, 119, 6, 0.3));
+      border-color: #f59e0b;
+    }
+
+    .calendar-day.red {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(220, 38, 38, 0.3));
+      border-color: #ef4444;
+    }
+
+    .calendar-day .day-number {
+      font-size: 1rem;
+    }
+
+    .calendar-day .day-indicator {
+      font-size: 0.6rem;
+      margin-top: 2px;
+      opacity: 0.6;
+    }
+
+    .day-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .day-modal.active {
+      display: flex;
+    }
+
+    .day-modal-content {
+      background: #111827;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+
+    .day-modal-header {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #38bdf8;
+    }
+
+    .day-modal-info {
+      margin-bottom: 16px;
+    }
+
+    .day-modal-info label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      opacity: 0.8;
+    }
+
+    .day-modal-info input,
+    .day-modal-info textarea {
+      width: 100%;
+      padding: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      color: #e5e7eb;
+      font-family: inherit;
+      margin-bottom: 16px;
+    }
+
+    .day-modal-info textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .day-modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .day-modal-buttons button {
+      padding: 10px 16px;
+    }
+
+    .btn-cancel {
+      background: rgba(255,255,255,0.1);
+      color: #e5e7eb;
+    }
+
+    .btn-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      color: #e5e7eb;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      font-size: 1.2rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-close:hover {
+      background: rgba(255,255,255,0.2);
+    }
+  </style>
+</head>
+<body>
+  <h1>⚔️ Life RPG</h1>
+
+  <div class="container">
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+      <button class="tab-btn" data-tab="stats">📈 Estadísticas</button>
+      <button class="tab-btn" data-tab="actions">🎯 Acciones</button>
+      <button class="tab-btn" data-tab="calendar">📅 Calendario</button>
+    </div>
+
+    <!-- TAB: DASHBOARD -->
+    <div id="dashboard" class="tab-content active">
+      <div class="dashboard-grid">
+        <!-- Gráfico Circular -->
+        <div class="chart-container">
+          <div class="chart-title">📊 Distribución de Estadísticas</div>
+          <canvas id="chartCanvas"></canvas>
+        </div>
+
+        <!-- Felicidad -->
+        <div class="happiness-card">
+          <div class="happiness-title">😄 Felicidad General</div>
+          <div id="happinessValue" class="happiness-value">0</div>
+          <div class="bar-container">
+            <div id="happinessBar" class="bar"></div>
+          </div>
+          <div id="log" style="margin-top: 16px; background: none; border-radius: 0;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: STATS -->
+    <div id="stats" class="tab-content">
+      <h2>📈 Tus Estadísticas</h2>
+      <div id="statsGrid" class="stats-grid"></div>
+    </div>
+
+    <!-- TAB: ACTIONS -->
+    <div id="actions" class="tab-content">
+      <h2>🎯 Realizar Acciones</h2>
+      <div id="actionsGrid" class="actions"></div>
+    </div>
+
+    <!-- TAB: CALENDAR -->
+    <div id="calendar" class="tab-content">
+      <h2>📅 Tu Calendario</h2>
+      <div class="calendar-container">
+        <div class="calendar-header">
+          <button onclick="previousMonth()">← Anterior</button>
+          <div class="month-year" id="monthYear">Enero 2024</div>
+          <button onclick="nextMonth()">Siguiente →</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para editar día -->
+  <div class="day-modal" id="dayModal">
+    <div class="day-modal-content">
+      <button class="btn-close" onclick="closeDayModal()">✕</button>
+      <div class="day-modal-header" id="dayModalTitle">Enero 1, 2024</div>
+      
+      <div class="day-modal-info">
+        <label>Felicidad (0-100):</label>
+        <input type="number" id="modalHappiness" min="0" max="100" value="50">
+      </div>
+
+      <div class="day-modal-info">
+        <label>Notas de hoy:</label>
+        <textarea id="modalNotes" placeholder="¿Qué hiciste hoy? ¿Cómo te sentiste?"></textarea>
+      </div>
+
+      <div class="day-modal-buttons">
+        <button class="btn-cancel" onclick="closeDayModal()">Cancelar</button>
+        <button onclick="saveDayEntry()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const API = "";
+let currentMonth = new Date();
+let selectedDay = null;
+let chartInstance = null;
+let isOnline = navigator.onLine;
+
+// ===== SISTEMA DE ALMACENAMIENTO LOCAL =====
+const LocalStorage = {
+  getStats: function() {
+    const stored = localStorage.getItem('liferpg_stats');
+    return stored ? JSON.parse(stored) : {
+      "salud": 60,
+      "estudios": 55,
+      "amistades": 60,
+      "economia": 50,
+      "disciplina": 50,
+      "familia": 65,
+      "relacion": 80,
+      "felicidad": 70
+    };
+  },
+  
+  saveStats: function(stats) {
+    localStorage.setItem('liferpg_stats', JSON.stringify(stats));
+  },
+  
+  getCalendar: function() {
+    const stored = localStorage.getItem('liferpg_calendar');
+    return stored ? JSON.parse(stored) : {};
+  },
+  
+  saveCalendar: function(calendar) {
+    localStorage.setItem('liferpg_calendar', JSON.stringify(calendar));
+  },
+  
+  getActions: function() {
+    const stored = localStorage.getItem('liferpg_actions');
+    return stored ? JSON.parse(stored) : null;
+  },
+  
+  saveActions: function(actions) {
+    localStorage.setItem('liferpg_actions', JSON.stringify(actions));
+  }
+};
+
+// Detectar cambios de conectividad
+window.addEventListener('online', () => {
+  isOnline = true;
+  showStatus('✓ Conectado', 'good');
+  syncWithServer();
+});
+
+window.addEventListener('offline', () => {
+  isOnline = false;
+  showStatus('⚠️ Modo offline - datos guardados localmente', 'warning');
+});
+
+function showStatus(message, type) {
+  const log = document.getElementById('log');
+  if (log) {
+    log.innerHTML = `<span class="${type}">${message}</span>`;
+    setTimeout(() => log.innerHTML = '', 3000);
+  }
+}
+
+// Sincronizar con servidor cuando esté online
+async function syncWithServer() {
+  if (!isOnline) return;
+  
+  try {
+    // Intentar obtener datos del servidor
+    const res = await fetch('/stats', { timeout: 5000 });
+    if (res.ok) {
+      const serverStats = await res.json();
+      // Mezclar con datos locales (prioridad a local si es más reciente)
+      const localStats = LocalStorage.getStats();
+      LocalStorage.saveStats(serverStats);
+    }
+  } catch (error) {
+    console.log('Servidor no disponible, usando datos locales');
+  }
+}
+
+// ===== TAB NAVIGATION =====
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tabName = btn.dataset.tab;
+    
+    // Remove active class from all tabs and buttons
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    
+    // Add active class to clicked button and corresponding tab
+    btn.classList.add('active');
+    document.getElementById(tabName).classList.add('active');
+
+    // Render calendar when calendar tab is clicked
+    if (tabName === 'calendar') {
+      renderCalendar();
+    }
+  });
+});
+
+// ===== STATS & CHART =====
+function barColor(value) {
+  if (value >= 80) return '#22c55e';
+  if (value >= 50) return '#38bdf8';
+  if (value >= 30) return '#f59e0b';
+  return '#ef4444';
+}
+
+async function loadStats() {
+  let data;
+  
+  try {
+    if (isOnline) {
+      const res = await fetch('/stats');
+      data = await res.json();
+      LocalStorage.saveStats(data);
+    } else {
+      data = LocalStorage.getStats();
+    }
+  } catch (error) {
+    console.log('Error cargando del servidor, usando localStorage');
+    data = LocalStorage.getStats();
+  }
+
+  // Update dashboard chart
+  updateChart(data);
+
+  // Update stats grid
+  const statsDiv = document.getElementById('statsGrid');
+  statsDiv.innerHTML = '';
+
+  // Add happiness first
+  const happy = data.felicidad;
+  document.getElementById('happinessValue').innerText = happy;
+  const hb = document.getElementById('happinessBar');
+  hb.style.width = happy + '%';
+  hb.style.background = barColor(happy);
+
+  // Add other stats
+  for (const [key, value] of Object.entries(data)) {
+    if (key === 'felicidad') continue;
+
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+
+    const name = document.createElement('div');
+    name.className = 'stat-name';
+    name.innerText = key;
+
+    const val = document.createElement('div');
+    val.className = 'stat-value';
+    val.innerText = value;
+
+    const barC = document.createElement('div');
+    barC.className = 'bar-container';
+
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.style.width = value + '%';
+    bar.style.background = barColor(value);
+
+    barC.appendChild(bar);
+    card.appendChild(name);
+    card.appendChild(val);
+    card.appendChild(barC);
+
+    statsDiv.appendChild(card);
+  }
+}
+
+function updateChart(data) {
+  const ctx = document.getElementById('chartCanvas').getContext('2d');
+  
+  const labels = Object.keys(data).filter(k => k !== 'felicidad');
+  const values = Object.values(data).filter((v, i) => Object.keys(data)[i] !== 'felicidad');
+  const colors = [
+    '#38bdf8', '#22c55e', '#f59e0b', '#ef4444',
+    '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'
+  ];
+
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  chartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels.map(l => l.toUpperCase()),
+      datasets: [{
+        data: values,
+        backgroundColor: colors.slice(0, values.length),
+        borderColor: '#111827',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: '#e5e7eb',
+            padding: 15,
+            font: { size: 12 }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ===== ACTIONS =====
+async function loadActions() {
+  let actions;
+  
+  try {
+    if (isOnline) {
+      const res = await fetch('/actions');
+      actions = await res.json();
+      LocalStorage.saveActions(actions);
+    } else {
+      actions = LocalStorage.getActions();
+      if (!actions) {
+        showStatus('⚠️ No hay acciones en cache', 'warning');
+        return;
+      }
+    }
+  } catch (error) {
+    console.log('Error cargando acciones, usando localStorage');
+    actions = LocalStorage.getActions();
+  }
+  
+  const container = document.getElementById('actionsGrid');
+  container.innerHTML = '';
+
+  actions.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'action-card';
+
+    const name = document.createElement('div');
+    name.className = 'action-name';
+    name.innerText = a.name;
+
+    const meta = document.createElement('div');
+    meta.className = 'action-meta';
+    meta.innerText = a.type.toUpperCase();
+
+    const btn = document.createElement('button');
+    btn.innerText = 'Hacer';
+    btn.onclick = () => doAction(a.name);
+
+    card.appendChild(name);
+    card.appendChild(meta);
+    card.appendChild(btn);
+    container.appendChild(card);
+  });
+}
+
+async function doAction(name) {
+  const log = document.getElementById('log');
+  
+  try {
+    if (isOnline) {
+      const res = await fetch('/do_action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: name })
+      });
+
+      const data = await res.json();
+      
+      // Guardar stats actualizados localmente
+      LocalStorage.saveStats(data.stats);
+
+      if (data.result === 'RULE_BROKEN') {
+        log.innerHTML = `⚠️ <span class="bad">Castigo por ${name}</span>`;
+      } else if (data.result === 'SPECIAL_COST') {
+        log.innerHTML = `🎫 <span class="warning">Costo aplicado: ${name}</span>`;
+      } else {
+        log.innerHTML = `✔️ <span class="good">Acción completada: ${name}</span>`;
+      }
+    } else {
+      // Modo offline: simular localmente
+      log.innerHTML = `⚠️ <span class="warning">Offline: cambios guardados localmente</span>`;
+      // Aquí podrías implementar la lógica de acciones en el cliente
+    }
+  } catch (error) {
+    log.innerHTML = `⚠️ <span class="bad">Error: ${error.message}</span>`;
+  }
+
+  loadStats();
+}
+
+// ===== CALENDAR =====
+async function loadCalendar() {
+  try {
+    if (isOnline) {
+      const res = await fetch('/calendar');
+      const data = await res.json();
+      LocalStorage.saveCalendar(data);
+      return data;
+    } else {
+      return LocalStorage.getCalendar();
+    }
+  } catch (error) {
+    console.log('Error cargando calendario, usando localStorage');
+    return LocalStorage.getCalendar();
+  }
+}
+
+function renderCalendar() {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+
+  // Update header
+  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  document.getElementById('monthYear').innerText = `${monthNames[month]} ${year}`;
+
+  // Get calendar data
+  loadCalendar().then(calendarData => {
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+
+    // Day headers
+    const dayHeaders = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    dayHeaders.forEach(header => {
+      const headerDiv = document.createElement('div');
+      headerDiv.className = 'calendar-day-header';
+      headerDiv.innerText = header;
+      grid.appendChild(headerDiv);
+    });
+
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Empty cells before month starts
+    for (let i = 0; i < firstDay; i++) {
+      const emptyDay = document.createElement('div');
+      emptyDay.className = 'calendar-day empty';
+      grid.appendChild(emptyDay);
+    }
+
+    // Days of month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const entry = calendarData[dayStr];
+      
+      const dayDiv = document.createElement('div');
+      dayDiv.className = 'calendar-day';
+      
+      if (entry) {
+        dayDiv.classList.add(entry.color);
+        dayDiv.innerHTML = `
+          <div class="day-number">${day}</div>
+          <div class="day-indicator">${entry.color === 'green' ? '✓' : entry.color === 'yellow' ? '=' : '✗'}</div>
+        `;
+      } else {
+        dayDiv.innerHTML = `<div class="day-number">${day}</div>`;
+      }
+
+      dayDiv.onclick = () => openDayModal(dayStr, entry);
+      grid.appendChild(dayDiv);
+    }
+  });
+}
+
+function openDayModal(dayStr, entry) {
+  selectedDay = dayStr;
+  const date = new Date(dayStr);
+  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  
+  document.getElementById('dayModalTitle').innerText = 
+    `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  
+  if (entry) {
+    document.getElementById('modalHappiness').value = entry.happiness;
+    document.getElementById('modalNotes').value = entry.notes || '';
+  } else {
+    document.getElementById('modalHappiness').value = '50';
+    document.getElementById('modalNotes').value = '';
+  }
+
+  document.getElementById('dayModal').classList.add('active');
+}
+
+function closeDayModal() {
+  document.getElementById('dayModal').classList.remove('active');
+  selectedDay = null;
+}
+
+async function saveDayEntry() {
+  if (!selectedDay) return;
+
+  const happiness = parseInt(document.getElementById('modalHappiness').value);
+  const notes = document.getElementById('modalNotes').value;
+
+  // Calcular color
+  const color = happiness >= 70 ? 'green' : happiness >= 40 ? 'yellow' : 'red';
+  
+  // Guardar localmente siempre
+  const calendar = LocalStorage.getCalendar();
+  calendar[selectedDay] = {
+    date: selectedDay,
+    happiness: happiness,
+    notes: notes,
+    color: color
+  };
+  LocalStorage.saveCalendar(calendar);
+
+  // Intentar sincronizar con servidor si está online
+  if (isOnline) {
+    try {
+      await fetch(`/calendar/${selectedDay}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ happiness, notes })
+      });
+      showStatus('✓ Guardado y sincronizado', 'good');
+    } catch (error) {
+      showStatus('✓ Guardado localmente', 'warning');
+    }
+  } else {
+    showStatus('✓ Guardado localmente (offline)', 'warning');
+  }
+
+  closeDayModal();
+  renderCalendar();
+}
+
+function previousMonth() {
+  currentMonth.setMonth(currentMonth.getMonth() - 1);
+  renderCalendar();
+}
+
+function nextMonth() {
+  currentMonth.setMonth(currentMonth.getMonth() + 1);
+  renderCalendar();
+}
+
+// Close modal on outside click
+document.getElementById('dayModal').addEventListener('click', (e) => {
+  if (e.target.id === 'dayModal') {
+    closeDayModal();
+  }
+});
+
+// Initialize
+loadStats();
+loadActions();
+syncWithServer();
+</script>
+</body>
+</html>
