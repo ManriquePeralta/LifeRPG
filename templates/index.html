@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Life RPG</title>
+  <link rel="manifest" href="/static/manifest.json">
+
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/static/sw.js");
+}
+</script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: radial-gradient(circle at top, #111827, #020617);
+      color: #e5e7eb;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 20px 0 10px;
+      font-size: 2.2rem;
+      letter-spacing: 1px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 16px;
+    }
+
+    /* ===== FELICIDAD ===== */
+    .happiness-card {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .happiness-title {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .happiness-value {
+      font-size: 3rem;
+      font-weight: bold;
+    }
+
+    .bar-container {
+      background: rgba(255,255,255,0.15);
+      border-radius: 999px;
+      overflow: hidden;
+      height: 14px;
+      margin-top: 8px;
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      transition: width 0.4s ease, background 0.4s ease;
+    }
+
+    /* ===== STATS ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    }
+
+    .stat-name {
+      font-size: 0.9rem;
+      opacity: 0.85;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    /* ===== ACTIONS ===== */
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .action-card {
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    }
+
+    .action-name {
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .action-meta {
+      font-size: 0.8rem;
+      opacity: 0.75;
+      margin-bottom: 10px;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      color: #020617;
+      font-weight: 600;
+      transition: transform 0.1s ease, opacity 0.2s ease;
+    }
+
+    button:hover {
+      transform: scale(1.03);
+      opacity: 0.9;
+    }
+
+    #log {
+      margin: 20px 0;
+      text-align: center;
+      min-height: 24px;
+      font-size: 0.95rem;
+    }
+
+    .bad { color: #f87171; }
+    .good { color: #4ade80; }
+  </style>
+</head>
+<body>
+  <h1>Life RPG</h1>
+
+  <div class="container">
+
+    <!-- FELICIDAD -->
+    <div class="happiness-card">
+      <div class="happiness-title">😄 Felicidad</div>
+      <div id="happinessValue" class="happiness-value">0</div>
+      <div class="bar-container">
+        <div id="happinessBar" class="bar"></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div id="stats" class="stats-grid"></div>
+
+    <div id="log"></div>
+
+    <!-- ACTIONS -->
+    <h2>Acciones</h2>
+    <div id="actions" class="actions"></div>
+
+  </div>
+
+<script>
+const API = "";
+
+function barColor(value) {
+  if (value >= 80) return '#22c55e';
+  if (value >= 50) return '#38bdf8';
+  if (value >= 30) return '#f59e0b';
+  return '#ef4444';
+}
+
+async function loadStats() {
+  const res = await fetch('/stats');
+  const data = await res.json();
+
+  const statsDiv = document.getElementById('stats');
+  statsDiv.innerHTML = '';
+
+  // Felicidad
+  const happy = data.felicidad;
+  document.getElementById('happinessValue').innerText = happy;
+  const hb = document.getElementById('happinessBar');
+  hb.style.width = happy + '%';
+  hb.style.background = barColor(happy);
+
+  for (const [key, value] of Object.entries(data)) {
+    if (key === 'felicidad') continue;
+
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+
+    const name = document.createElement('div');
+    name.className = 'stat-name';
+    name.innerText = key.toUpperCase();
+
+    const val = document.createElement('div');
+    val.className = 'stat-value';
+    val.innerText = value;
+
+    const barC = document.createElement('div');
+    barC.className = 'bar-container';
+
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.style.width = value + '%';
+    bar.style.background = barColor(value);
+
+    barC.appendChild(bar);
+    card.appendChild(name);
+    card.appendChild(val);
+    card.appendChild(barC);
+
+    statsDiv.appendChild(card);
+  }
+}
+
+async function loadActions() {
+  const res = await fetch('/actions');
+  const actions = await res.json();
+  const container = document.getElementById('actions');
+  container.innerHTML = '';
+
+  actions.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'action-card';
+
+    const name = document.createElement('div');
+    name.className = 'action-name';
+    name.innerText = a.name;
+
+    const meta = document.createElement('div');
+    meta.className = 'action-meta';
+    meta.innerText = a.type;
+
+    const btn = document.createElement('button');
+    btn.innerText = 'Hacer';
+    btn.onclick = () => doAction(a.name);
+
+    card.appendChild(name);
+    card.appendChild(meta);
+    card.appendChild(btn);
+    container.appendChild(card);
+  });
+}
+
+async function doAction(name) {
+  const log = document.getElementById('log');
+  const res = await fetch('/do_action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: name })
+  });
+
+  const data = await res.json();
+
+  if (data.result === 'RULE_BROKEN') {
+    log.innerHTML = `⚠️ <span class="bad">Castigo por</span> ${name}`;
+  } else if (data.result === 'SPECIAL_COST') {
+    log.innerHTML = `🎫 <span class="good">Costo aplicado</span>: ${name}`;
+  } else {
+    log.innerHTML = `✔️ Acción positiva: ${name}`;
+  }
+
+  loadStats();
+}
+
+loadStats();
+loadActions();
+</script>
+</body>
+</html>
